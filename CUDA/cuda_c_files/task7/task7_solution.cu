@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <math.h>
+// CUDA utils
+#include "util.hpp"
 
 // Simple define to index into a 1D array from 2D space
 #define I2D(num, c, r) ((r)*(num)+(c))
@@ -71,12 +73,13 @@ int main()
   
   float *temp1_ref, *temp2_ref, *temp1, *temp2, *temp_tmp;
   
-  const int size = ni * nj * sizeof(float);
+  const size_t size = ni * nj;
   
-  temp1_ref = (float*)malloc(size);
-  temp2_ref = (float*)malloc(size);
-  cudaMallocManaged(&temp1, size);
-  cudaMallocManaged(&temp2, size);
+  temp1_ref = malloc_host<float>(size);
+  temp2_ref = malloc_host<float>(size);
+  // Here we use Unified Memory
+  temp1 = malloc_managed<float>(size);
+  temp2 = malloc_managed<float>(size);
   
   // Initialize with random data
   for( int i = 0; i < ni*nj; ++i) {
@@ -101,10 +104,9 @@ int main()
   for (istep=0; istep < nstep; istep++) { 
     step_kernel_mod<<< grid, tblocks >>>(ni, nj, tfac, temp1, temp2); 
     
-    ierrSync = cudaGetLastError();
-    ierrAsync = cudaDeviceSynchronize(); // Wait for the GPU to finish
-    if (ierrSync != cudaSuccess) { printf("Sync error: %s\n", cudaGetErrorString(ierrSync)); }
-    if (ierrAsync != cudaSuccess) { printf("Async error: %s\n", cudaGetErrorString(ierrAsync)); }
+    // Check errors
+    cuda_check_last_kernel("step_kernel_mod");
+    cuda_check_status(cudaDeviceSynchronize());
        
     // swap the temperature pointers 
     temp_tmp = temp1; 

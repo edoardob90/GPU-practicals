@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <math.h>
+// CUDA utils
+#include "util.hpp"
 
 // Simple define to index into a 1D array from 2D space
 #define I2D(num, c, r) ((r)*(num)+(c))
@@ -70,38 +72,36 @@ int main()
   const int nj = 100;
   float tfac = 8.418e-5; // thermal diffusivity of silver
   
-  float *temp1_ref, *temp2_ref, *temp1, *temp2, *temp_tmp;
-  float *d_temp1, *d_temp2;
+  //const int size = ni * nj * sizeof(float);
+  const size_t size = ni * nj;
   
-  const int size = ni * nj * sizeof(float);
+  // Old alloc
+  //temp1_ref = (float*)malloc(size);
+  //temp2_ref = (float*)malloc(size);
+  //temp1 = (float*)malloc(size);
+  //temp2 = (float*)malloc(size);
   
-  temp1_ref = (float*)malloc(size);
-  temp2_ref = (float*)malloc(size);
-  temp1 = (float*)malloc(size);
-  temp2 = (float*)malloc(size);
-  
-   /*
-      The same example, but with manually managed memory.
-      API to call:
-        - cudaMalloc
-        - cudaMemcpy: H->D and later D->H
-        - cudaFree (as for UM)
-    */
-  cudaMalloc(&d_temp1, size);
-  cudaMalloc(&d_temp2, size);
-  
+  // Host
+  float* temp_tmp;
+  float* temp1_ref=malloc_host<float>(size);
+  float* temp2_ref=malloc_host<float>(size);
+  float* temp1=malloc_host<float>(size);
+  float* temp2=malloc_host<float>(size);
+  // Device
+  float* d_temp1=malloc_device<float>(size);
+  float* d_temp2=malloc_device<float>(size);
+  float* d_temp_tmp=malloc_device<float>(size);
+
   // Initialize with random data
   for( int i = 0; i < ni*nj; ++i) {
     temp1_ref[i] = temp2_ref[i] = (float)rand()/(float)(RAND_MAX/100.0f);
   }
-  //Here we manually copy initial data on the device
-  cudaError_t copyErr;
-  copyErr = cudaMemcpy(&d_temp1, &temp1_ref, size, cudaMemcpyHostToDevice);
-  if (copyErr != cudaSuccess) printf("Copy-in error: %s\n", cudaGetErrorString(copyErr));
-  copyErr = cudaMemcpy(&d_temp2, &temp2_ref, size, cudaMemcpyHostToDevice);
-  if (copyErr != cudaSuccess) printf("Copy-in error: %s\n", cudaGetErrorString(copyErr));
 
-  // Execute the CPU-only reference version
+  //Here we manually copy initial data on the device
+  copy_to_device<float>(temp1_ref, d_temp1, size);
+  copy_to_device<float>(temp2_ref, d_temp2, size);
+
+  // === CPU version (ref) ===
   for (istep=0; istep < nstep; istep++) {
     step_kernel_ref(ni, nj, tfac, temp1_ref, temp2_ref); 
        
@@ -111,32 +111,28 @@ int main()
     temp2_ref= temp_tmp; 
   }
   
+  // ==== GPU kernel ====
   // Define grid size for kernel launch
   dim3 threads_per_block(32, 16, 1); // 32 x 16 threads per block
   dim3 number_of_blocks( (nj / threads_per_block.x)+1, (ni / threads_per_block.y)+1, 1);
-  cudaError_t ierrSync, ierrAsync;
   // Execute the GPU version with the same data
   for (istep=0; istep < nstep; istep++) { 
     step_kernel_mod<<< number_of_blocks, threads_per_block>>>(ni, nj, tfac, d_temp1, d_temp2); 
 
     // Check errors
-    ierrSync = cudaGetLastError();
-    ierrAsync = cudaDeviceSynchronize();
-    if (ierrSync != cudaSuccess) printf("Sync error: %s\n", cudaGetErrorString(ierrSync));
-    if (ierrAsync != cudaSuccess) printf("Async error: %s\n", cudaGetErrorString(ierrAsync));
+    cuda_check_last_kernel("step_kernel_mod");
+    cuda_check_status(cudaDeviceSynchronize());
        
     // swap the temperature pointers 
-    temp_tmp = temp1; 
-    temp1 = temp2; 
-    temp2= temp_tmp; 
+    d_temp_tmp = d_temp1; 
+    d_temp1 = d_temp2; 
+    d_temp2= d_temp_tmp; 
   }
 
   // We copy back data from device
-  copyErr = cudaMemcpy(&temp1, &d_temp1, size, cudaMemcpyDeviceToHost);
-  if (copyErr != cudaSuccess) printf("Copy-back error: %s\n",cudaGetErrorString(copyErr));
-  copyErr = cudaMemcpy(&temp2, &d_temp2, size, cudaMemcpyDeviceToHost);
-  if (copyErr != cudaSuccess) printf("Copy-back error: %s\n",cudaGetErrorString(copyErr));
-  
+  copy_to_host<float>(d_temp1, temp1, size);
+  copy_to_host<float>(d_temp2, temp2, size);
+
   float maxError = 0;
   // Output should always be stored in the temp1 and temp1_ref at this point
   for( int i = 0; i < ni*nj; ++i ) {

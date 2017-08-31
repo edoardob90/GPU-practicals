@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <math.h>
-// CUDA utils
+#include <iostream>
+// CUDA
+#include <cuda.h>
 #include "util.hpp"
 
 // Simple define to index into a 1D array from 2D space
@@ -67,8 +69,8 @@ int main()
   int nstep = 200; // number of time steps
   
   // Specify our 2D dimensions
-  const int ni = 200;
-  const int nj = 100;
+  const int ni = 2000;
+  const int nj = 1000;
   float tfac = 8.418e-5; // thermal diffusivity of silver
   
   float *temp1_ref, *temp2_ref, *temp1, *temp2, *temp_tmp;
@@ -87,6 +89,7 @@ int main()
   }
   
   // Execute the CPU-only reference version
+  auto start_cpu = get_time();
   for (istep=0; istep < nstep; istep++) { 
     step_kernel_ref(ni, nj, tfac, temp1_ref, temp2_ref); 
        
@@ -95,12 +98,14 @@ int main()
     temp1_ref = temp2_ref; 
     temp2_ref= temp_tmp; 
   }
+  auto total_cpu = get_time() - start_cpu;
+  std::cerr << "CPU time: " << total_cpu << "s\n";
 
   dim3 tblocks(32, 16, 1);
   dim3 grid((nj/tblocks.x)+1, (ni/tblocks.y)+1, 1);
-  cudaError_t ierrSync, ierrAsync;
   
   // Execute the modified version using same data
+  auto start_gpu = get_time();
   for (istep=0; istep < nstep; istep++) { 
     step_kernel_mod<<< grid, tblocks >>>(ni, nj, tfac, temp1, temp2); 
     
@@ -113,6 +118,9 @@ int main()
     temp1 = temp2; 
     temp2= temp_tmp; 
   }
+  
+  auto total_gpu = get_time() - start_gpu;
+  std::cerr << "GPU time: " << total_gpu << "s\n";
   
   float maxError = 0;
   // Output should always be stored in the temp1 and temp1_ref at this point

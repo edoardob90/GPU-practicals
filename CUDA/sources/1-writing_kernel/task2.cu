@@ -2,13 +2,13 @@
 
 #define N 2048 * 2048 // Number of elements in each vector
 
-__global__ void saxpy(int * a, int * b, int * c)
+// TODO: kernel keyword
+void saxpy(int * a, int * b, int * c)
 {
-    // Determine our unique global thread ID, so we know which element to process
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    // TODO: Determine our unique global thread ID, so we know which element to process
     
     if ( tid < N ) // Make sure we don't do more work than we have data!
-        c[tid] = 2 * a[tid] + b[tid];
+        // TODO: write the kernel
 }
 
 int main()
@@ -33,9 +33,9 @@ int main()
     int threads_per_block = 128;
     int number_of_blocks = (N / threads_per_block) + 1;
 
-    saxpy <<< number_of_blocks, threads_per_block >>> ( a, b, c );
+    // TODO: launch the kernel
 
-    cudaDeviceSynchronize(); // Wait for the GPU to finish
+    // TODO: Wait for the GPU to finish
 
     // Print out the first and last 5 values of c for a quality check
     for( int i = 0; i < 5; ++i )

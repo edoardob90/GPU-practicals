@@ -15,6 +15,7 @@ int main()
 {
     float *x, *y;
     
+    // CUDA types for error statuses
     cudaError_t ierrSync, ierrAsync;
 
     int size = N * sizeof (float); // The total number of bytes per vector
@@ -35,11 +36,13 @@ int main()
 
     saxpy <<< number_of_blocks, threads_per_block >>> ( 2.0f, x, y );
     
-    ierrSync = cudaGetLastError();
-    if (ierrSync != cudaSuccess) { printf("Sync error: %s\n", cudaGetErrorString(ierrSync)); }
+    /* TODO: get last error to see if kernel launch failed
+     *       check is == cudaSuccess
+     */
 
-    ierrAsync = cudaDeviceSynchronize(); // Wait for the GPU to finish
-    if (ierrAsync != cudaSuccess) { printf("Sync error: %s\n", cudaGetErrorString(ierrAsync)); }
+    /* TODO: get error AFTER kernel finished (first sync CPU and device)
+     *       check is == cudaSuccess
+     */
 
     // Print out our Max Error
     float maxError = 0;

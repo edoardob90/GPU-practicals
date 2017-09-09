@@ -2,12 +2,13 @@
 
 #define N  64
 
-__global__ void matrixMulGPU( int * a, int * b, int * c )
+// TODO: kernel keyword
+void matrixMulGPU( int * a, int * b, int * c )
 {
     int val = 0;
 
-    int row = blockIdx.x * blockDim.x + threadIdx.x;
-    int col = blockIdx.y * blockDim.y + threadIdx.y;
+    int row = // TODO: get row id of current thread
+    int col = // TODO: get col id of current thread
 
     if (row < N && col < N)
     {
@@ -53,8 +54,9 @@ int main()
             c_gpu[row*N + col] = 0;
         }
 
-    dim3 threads_per_block (16, 16, 1); // A 16 x 16 block threads
-    dim3 number_of_blocks ( (N/threads_per_block.x)+1, (N/threads_per_block.y)+1, 1 );
+    // TODO: define max number of threads per block
+    // TODO: define number of blocks
+    // Use CUDA-defined type 'dim3'
 
     matrixMulGPU <<< number_of_blocks, threads_per_block >>> ( a, b, c_gpu );
 

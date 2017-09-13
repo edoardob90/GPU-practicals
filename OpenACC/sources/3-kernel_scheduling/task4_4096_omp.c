@@ -28,7 +28,6 @@ int main(int argc, char** argv)
     }
     
     printf("Jacobi relaxation Calculation: %d x %d mesh\n", n, m);
-    printf("Running with %d OMP threads\n", omp_get_num_threads());
     
     StartTimer();
     int iter = 0;

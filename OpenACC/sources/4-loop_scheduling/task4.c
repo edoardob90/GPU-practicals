@@ -40,7 +40,7 @@ int main(int argc, char** argv)
         {
             for( int j = 1; j < n-1; j++)
             {
-                #pragma acc loop gang(8) vector(32)
+                // TODO : add acc directive for loop scheduling
                 for( int i = 1; i < m-1; i++ )
                 {
                     Anew[j][i] = 0.25 * ( A[j][i+1] + A[j][i-1]
@@ -51,7 +51,7 @@ int main(int argc, char** argv)
             
             for( int j = 1; j < n-1; j++)
             {
-                #pragma acc loop gang(8) vector(32)
+                // TODO : add acc directive for loop scheduling
                 for( int i = 1; i < m-1; i++ )
                 {
                     A[j][i] = Anew[j][i];    

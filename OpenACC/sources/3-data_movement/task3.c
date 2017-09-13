@@ -31,13 +31,11 @@ int main(int argc, char** argv)
     StartTimer();
     int iter = 0;
     
-    // Main while loop
-    // HERE we should ensure to have data copied on the device
-    #pragma acc data copy(A) copyin(Anew)
-    {
+    // TODO : add acc directive for data movement
+    { // acc explcit data movement block
         while ( error > tol && iter < iter_max )
         {
-            #pragma acc kernels
+            // TODO : add acc directive
             { // main acc kernel code block
                 error = 0.0;
 
@@ -65,7 +63,7 @@ int main(int argc, char** argv)
             iter++;
       
         } // end main while loop
-    } // end acc data movement
+    } // end acc explicit data movement
 
     double runtime = GetTimer();
 

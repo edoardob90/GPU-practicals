@@ -35,7 +35,7 @@ int main(int argc, char** argv)
     {
         error = 0.0;
 
-        #pragma acc kernels
+        // TODO: add acc directive
         {
         for( int j = 1; j < n-1; j++)
         {
@@ -48,7 +48,7 @@ int main(int argc, char** argv)
         }
         }
         
-        #pragma acc kernels
+        // TODO: add acc directive
         {
         for( int j = 1; j < n-1; j++)
         {

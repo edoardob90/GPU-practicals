@@ -37,3 +37,4 @@
 *.swp
 *.ipynb_checkpoints*
 *.zip
+*.f90

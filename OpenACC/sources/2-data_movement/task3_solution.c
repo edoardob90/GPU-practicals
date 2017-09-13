@@ -2,8 +2,8 @@
 #include <string.h>
 #include "timer.h"
 
-#define NN 1024
-#define NM 1024
+#define NN 4096
+#define NM 4096
 
 float A[NN][NM];
 float Anew[NN][NM];

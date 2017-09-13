@@ -34,13 +34,11 @@ int main(int argc, char** argv)
     #pragma acc data copy(A) copyin(Anew)
     while ( error > tol && iter < iter_max )
     {
-        #pragma acc kernels
-        {
-            error = 0.0;
-          
+    	error = 0.0;
+        #pragma acc kernels loop reduction(max:error)
             for( int j = 1; j < n-1; j++)
             {
-                #pragma acc loop device_type(nvidia) gang(8) vector(32)
+                #pragma acc loop device_type(nvidia) gang(16) vector(32)
                 for( int i = 1; i < m-1; i++ )
                 {
                     Anew[j][i] = 0.25 * ( A[j][i+1] + A[j][i-1]
@@ -49,15 +47,15 @@ int main(int argc, char** argv)
                 }
             }
             
+	    #pragma acc kernels loop
             for( int j = 1; j < n-1; j++)
             {
-                #pragma acc loop device_type(nvidia) gang(8) vector(32)
+                #pragma acc loop device_type(nvidia) gang(16) vector(32)
                 for( int i = 1; i < m-1; i++ )
                 {
                     A[j][i] = Anew[j][i];    
                 }
             }
-        }
 
         if(iter % 100 == 0) printf("%5d, %0.6f\n", iter, error);
         

@@ -39,6 +39,7 @@ int main(int argc, char** argv)
         #pragma acc kernels loop reduction(max:error)
         for( int j = 1; j < n-1; j++)
         {
+        #pragma acc loop gang(16) vector(32)
             for( int i = 1; i < m-1; i++ )
             {
                 Anew[j][i] = 0.25 * ( A[j][i+1] + A[j][i-1]
@@ -49,6 +50,7 @@ int main(int argc, char** argv)
         #pragma acc kernels loop
         for( int j = 1; j < n-1; j++)
         {
+        #pragma acc loop gang(16) vector(32)
             for( int i = 1; i < m-1; i++ )
             {
                 A[j][i] = Anew[j][i];    

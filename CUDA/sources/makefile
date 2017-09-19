@@ -1,4 +1,4 @@
-DIRS=0-serial 3-kernel_scheduling 2-data_movement 1-kernels
+DIRS := $(shell find . -type d -name "*-*")
 
 .PHONY: clean $(DIRS)
 
